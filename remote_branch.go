@@ -80,6 +80,10 @@ func (r *RemoteBranch) GetHeadCommit() (*Commit, error) {
 	return commit, nil
 }
 
+func (b *RemoteBranch) Equals(otherRemoteBranch *RemoteBranch) bool {
+	return b.GetFullName() == otherRemoteBranch.GetFullName()
+}
+
 func (b *RemoteBranch) String() string {
 	return fmt.Sprintf("Remote branch %s @ %s", b.GetName(), b.remote.GetName())
 }
