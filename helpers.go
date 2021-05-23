@@ -47,7 +47,7 @@ func MustGetGitVersion() *semver.Version {
 	return version
 }
 
-var regexpStarredBranchList = regexp.MustCompile(`^\s*\*?\s*(.*)$`)
+var regexpStarredBranchList = regexp.MustCompile(`^\s*\*?\s*([^ ]*)`)
 var regexpBranchList = regexp.MustCompile(`^[0-9a-f]{5,40}\s+(.*)$`)
 
 func parseStarredBranchList(input string) ([]string, error) {

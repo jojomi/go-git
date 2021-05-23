@@ -98,6 +98,47 @@ func (c *Commit) GetLocalBranches() ([]*LocalBranch, error) {
 	return localBranches, nil
 }
 
+// GetRemoteBranches returns a list of all branches on a given remote containing this commit
+func (c *Commit) GetRemoteBranches(remote *Remote) ([]*RemoteBranch, error) {
+	// git branch --all --contains <commit hash> (filtered by /remotes/<remote>/)
+	remoteBranches := make([]*RemoteBranch, 0)
+	command := script.LocalCommandFrom("git branch --all --contains")
+	hash, err := c.GetFullHash()
+	if err != nil {
+		return remoteBranches, nil
+	}
+	command.Add(hash)
+
+	pr, err := c.repository.Execute(command)
+	if !pr.Successful() {
+		err = fmt.Errorf("could not list remote branches containing commit %s", hash)
+	}
+	if err != nil {
+		return remoteBranches, err
+	}
+
+	branchList, err := parseStarredBranchList(pr.Output())
+	if err != nil {
+		return nil, err
+	}
+
+	marker := "remotes/" + remote.GetName() + "/"
+	for _, branch := range branchList {
+		// filter
+		if !strings.HasPrefix(branch, marker) {
+			continue
+		}
+		branch = branch[len(marker):]
+		if branch == "HEAD" {
+			continue
+		}
+
+		remoteBranches = append(remoteBranches, newRemoteBranch(c.repository, remote, branch))
+	}
+
+	return remoteBranches, nil
+}
+
 func (c *Commit) Equals(otherCommit *Commit) bool {
 	return c.GetHash() == otherCommit.GetHash()
 }
