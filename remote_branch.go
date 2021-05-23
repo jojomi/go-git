@@ -31,6 +31,18 @@ func (b *RemoteBranch) GetFullName() string {
 	return b.remote.GetName() + "/" + b.name
 }
 
+func (b *RemoteBranch) Delete() error {
+	// git push <remote> --delete <branch name>
+	command := script.LocalCommandFrom("git push")
+	command.AddAll(b.remote.GetName(), "--delete", b.GetName())
+
+	pr, err := b.repository.Execute(command)
+	if !pr.Successful() {
+		err = fmt.Errorf("could not delete remote branch %s on %s", b.GetName(), b.remote)
+	}
+	return err
+}
+
 func (b *RemoteBranch) IsMergedTo(target *RemoteBranch) (bool, error) {
 	localBranchHead, err := b.GetHeadCommit()
 	if err != nil {
