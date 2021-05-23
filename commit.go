@@ -55,8 +55,8 @@ func (c *Commit) GetAuthorDate() (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	const rfc2822 = "Mon, 02 Jan 2006 15:04:05 -0700"
-	d, err := time.Parse(rfc2822, dateString)
+	const format = "Mon, 2 Jan 2006 15:04:05 -0700"
+	d, err := time.Parse(format, dateString)
 	if err != nil {
 		return time.Time{}, err
 	}
