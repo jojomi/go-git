@@ -115,8 +115,8 @@ func (b *LocalBranch) GetTrackingRemote(r *Remote) (*RemoteBranch, error) {
 }
 
 func (b *LocalBranch) Delete() error {
-	// git LocalBranch -d <local_LocalBranch>
-	command := script.LocalCommandFrom("git LocalBranch --delete")
+	// git branch -d <local_branch>
+	command := script.LocalCommandFrom("git branch --delete")
 	command.Add(b.GetName())
 
 	pr, err := b.repository.Execute(command)
