@@ -26,6 +26,14 @@ func (c *Commit) GetHash() string {
 	return c.hash
 }
 
+func (c *Commit) GetFullHash() (string, error) {
+	return c.getCommitValue("%H")
+}
+
+func (c *Commit) GetShortHash() (string, error) {
+	return c.getCommitValue("%h")
+}
+
 func (c *Commit) GetMessage() (string, error) {
 	return c.getCommitValue("%s")
 }
