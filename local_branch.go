@@ -130,9 +130,6 @@ func (b *LocalBranch) Delete() error {
 	return nil
 }
 
-//func (b *LocalBranch) DeleteRemote() error {
-//}
-
 func (b *LocalBranch) Equals(otherLocalBranch *LocalBranch) bool {
 	return b.GetName() == otherLocalBranch.GetName()
 }

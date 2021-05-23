@@ -73,7 +73,7 @@ func (r *Repository) GetBranch(name string) (*LocalBranch, error) {
 		return nil, err
 	}
 	if !existing {
-		return nil, fmt.Errorf("could not find local LocalBranch %s", name)
+		return nil, fmt.Errorf("could not find local branch %s", name)
 	}
 	return newLocalBranch(r, name), nil
 }
