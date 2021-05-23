@@ -159,7 +159,7 @@ func (r *Repository) GetMainBranch() (*LocalBranch, error) {
 		return newLocalBranch(r, candidate), nil
 	}
 
-	return nil, fmt.Errorf("no main LocalBranch found")
+	return nil, fmt.Errorf("no main branch found")
 }
 
 func (r *Repository) GetCurrentBranch() (*LocalBranch, error) {

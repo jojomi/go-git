@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jojomi/go-script/v2"
 )
@@ -9,6 +10,8 @@ import (
 type Remote struct {
 	repository *Repository
 	name       string
+
+	mainRemoteBranchName string
 }
 
 func newRemote(repository *Repository, name string) *Remote {
@@ -73,6 +76,46 @@ func (r *Remote) GetBranches() ([]*RemoteBranch, error) {
 	}
 
 	return branches, err
+}
+
+func (r *Remote) GetMainBranch() (*RemoteBranch, error) {
+	// cache
+	if r.mainRemoteBranchName != "" {
+		return newRemoteBranch(r.repository, r, r.mainRemoteBranchName), nil
+	}
+
+	candidates := make([]string, 0, 3)
+
+	// check config
+	command := script.LocalCommandFrom("git config init.defaultLocalBranch")
+	pr, err := r.repository.Execute(command)
+	if err != nil {
+		return nil, err
+	}
+	configLocalBranch := strings.TrimSpace(pr.Output())
+	if configLocalBranch != "" {
+		candidates = append(candidates, configLocalBranch)
+	}
+
+	candidates = append(candidates, "master", "main", "primary")
+
+	var existing bool
+	for _, candidate := range candidates {
+		existing, err = r.HasBranch(candidate)
+		if err != nil {
+			return nil, err
+		}
+		if !existing {
+			continue
+		}
+
+		// put to cache
+		r.mainRemoteBranchName = candidate
+
+		return newRemoteBranch(r.repository, r, candidate), nil
+	}
+
+	return nil, fmt.Errorf("no main branch found")
 }
 
 func (r *Remote) String() string {
