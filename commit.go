@@ -67,6 +67,37 @@ func (c *Commit) GetAuthorDateRelative() (string, error) {
 	return c.getCommitValue("%ar")
 }
 
+// GetLocalBranches returns a list of all local branches containing this commit
+func (c *Commit) GetLocalBranches() ([]*LocalBranch, error) {
+	// git branch --contains <commit hash>
+	localBranches := make([]*LocalBranch, 0)
+	command := script.LocalCommandFrom("git branch --contains")
+	hash, err := c.GetFullHash()
+	if err != nil {
+		return localBranches, nil
+	}
+	command.Add(hash)
+
+	pr, err := c.repository.Execute(command)
+	if !pr.Successful() {
+		err = fmt.Errorf("could not list local branches containing commit %s", hash)
+	}
+	if err != nil {
+		return localBranches, err
+	}
+
+	branchList, err := parseStarredBranchList(pr.Output())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, branch := range branchList {
+		localBranches = append(localBranches, newLocalBranch(c.repository, branch))
+	}
+
+	return localBranches, nil
+}
+
 func (c *Commit) Equals(otherCommit *Commit) bool {
 	return c.GetHash() == otherCommit.GetHash()
 }
