@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,12 +15,16 @@ type Commit struct {
 	repository *Repository
 }
 
-func newCommit(repository *Repository, hash string) *Commit {
+func newCommit(repository *Repository, hash string) (*Commit, error) {
+	if !IsValidCommitHash(hash) {
+		return nil, fmt.Errorf("invalid hash upon commit creation: %s", hash)
+	}
+
 	commit := Commit{
 		repository: repository,
 		hash:       hash,
 	}
-	return &commit
+	return &commit, nil
 }
 
 func (c *Commit) GetHash() string {
@@ -32,6 +37,21 @@ func (c *Commit) GetFullHash() (string, error) {
 
 func (c *Commit) GetShortHash() (string, error) {
 	return c.getCommitValue("%h")
+}
+
+func (c *Commit) GetPatchId() (string, error) {
+	lc := &script.LocalCommand{}
+	lc.AddAll("sh", "-c", fmt.Sprintf("git show %s | git patch-id", c.GetHash()))
+	pr, err := c.repository.Execute(lc)
+	if !pr.Successful() {
+		err = fmt.Errorf("could not get patch-id for commit %s", c.GetHash())
+	}
+	if err != nil {
+		return "", err
+	}
+
+	r := regexp.MustCompile(`^[^ ]+`)
+	return r.FindString(pr.Output()), nil
 }
 
 func (c *Commit) GetMessage() (string, error) {
@@ -139,6 +159,20 @@ func (c *Commit) GetRemoteBranches(remote *Remote) ([]*RemoteBranch, error) {
 	return remoteBranches, nil
 }
 
+func (c *Commit) EqualsPatchId(otherCommit *Commit) (bool, error) {
+	thisPatchId, err := c.GetPatchId()
+	if err != nil {
+		return false, err
+	}
+
+	otherPatchId, err := otherCommit.GetPatchId()
+	if err != nil {
+		return false, err
+	}
+
+	return thisPatchId == otherPatchId, nil
+}
+
 func (c *Commit) Equals(otherCommit *Commit) bool {
 	return c.GetHash() == otherCommit.GetHash()
 }
@@ -162,4 +196,9 @@ func (c *Commit) getCommitValue(param string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(pr.Output()), nil
+}
+
+func IsValidCommitHash(hash string) bool {
+	r := regexp.MustCompile(`^[0-9a-f]{5,40}$`)
+	return r.MatchString(hash)
 }

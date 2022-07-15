@@ -88,8 +88,7 @@ func (r *RemoteBranch) GetHeadCommit() (*Commit, error) {
 
 	hash := strings.TrimSpace(pr.Output())
 
-	commit := newCommit(r.repository, hash)
-	return commit, nil
+	return newCommit(r.repository, hash)
 }
 
 func (b *RemoteBranch) Equals(otherRemoteBranch *RemoteBranch) bool {
