@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bufio"
 	"fmt"
 	"strings"
 
@@ -44,8 +45,7 @@ func (b *LocalBranch) GetHeadCommit() (*Commit, error) {
 
 	hash := strings.TrimSpace(pr.Output())
 
-	commit := newCommit(b.repository, hash)
-	return commit, nil
+	return newCommit(b.repository, hash)
 }
 
 func (b *LocalBranch) IsMainBranch() (bool, error) {
@@ -85,6 +85,32 @@ func (b *LocalBranch) IsMergedTo(target Branch) (bool, error) {
 	}
 	mergeBase := strings.TrimSpace(pr.Output())
 	return mergeBase == localBranchHead.GetHash(), nil
+}
+
+func (b *LocalBranch) GetCommitsByMessage(msg string) ([]*Commit, error) {
+	lc := &script.LocalCommand{}
+	// TODO replace regexp meta chars on msg
+	lc.AddAll("git", "log", `--pretty=%h`, "--no-merges", b.GetFullName(), "--grep", msg)
+	pr, err := b.repository.Execute(lc)
+
+	result := []*Commit{}
+	if err != nil {
+		return result, err
+	}
+	if !pr.Successful() {
+		return result, fmt.Errorf(`could not execute search for commit message "%s" on branch %s`, msg, b.GetFullName())
+	}
+
+	// scan output line by line
+	scanner := bufio.NewScanner(strings.NewReader(pr.TrimmedOutput()))
+	for scanner.Scan() {
+		commit, err := newCommit(b.repository, scanner.Text())
+		if err != nil {
+			return result, err
+		}
+		result = append(result, commit)
+	}
+	return result, nil
 }
 
 func (b *LocalBranch) GetTrackingRemote(r *Remote) (*RemoteBranch, error) {
