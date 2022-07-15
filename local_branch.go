@@ -140,9 +140,12 @@ func (b *LocalBranch) GetTrackingRemote(r *Remote) (*RemoteBranch, error) {
 	return newRemoteBranch(b.repository, r, trackingName), nil
 }
 
-func (b *LocalBranch) Delete() error {
+func (b *LocalBranch) deleteInternal(force bool) error {
 	// git branch -d <local_branch>
 	command := script.LocalCommandFrom("git branch --delete")
+	if force {
+		command.Add("--force")
+	}
 	command.Add(b.GetName())
 
 	pr, err := b.repository.Execute(command)
@@ -154,6 +157,14 @@ func (b *LocalBranch) Delete() error {
 	}
 
 	return nil
+}
+
+func (b *LocalBranch) Delete() error {
+	return b.deleteInternal(false)
+}
+
+func (b *LocalBranch) ForceDelete() error {
+	return b.deleteInternal(true)
 }
 
 func (b *LocalBranch) Equals(otherLocalBranch *LocalBranch) bool {
